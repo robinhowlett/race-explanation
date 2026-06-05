@@ -43,7 +43,25 @@ def compute_probabilities(
             # A horse 10 PR pts above field avg gets ~2x the base rate
             ability_diff = profile.ability_estimate - field_avg
             ability_multiplier = 2.0 ** (ability_diff / 10.0)
-            adjusted_rate = base_rate * ability_multiplier
+
+            # Style × scenario interaction:
+            # Speed horses get penalized in collapse (they're the ones dying)
+            # Closers get boosted in collapse (they benefit from the meltdown)
+            style_modifier = 1.0
+            if scenario.label == "collapse":
+                if profile.style_class == "E":
+                    style_modifier = 0.5  # speed horses fade badly in collapses
+                elif profile.style_class == "EP":
+                    style_modifier = 0.7  # pressers hurt too but less
+                elif profile.style_class == "C":
+                    style_modifier = 1.4  # closers thrive
+            elif scenario.label == "uncontested":
+                if profile.style_class == "E":
+                    style_modifier = 1.3  # lone speed bonus
+                elif profile.style_class == "C":
+                    style_modifier = 0.7  # closers suffer without pace
+
+            adjusted_rate = base_rate * ability_multiplier * style_modifier
 
             scenario_probs[scenario.label] = adjusted_rate
 
