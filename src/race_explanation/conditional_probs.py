@@ -50,18 +50,37 @@ def compute_probabilities(
             style_modifier = 1.0
             if scenario.label == "collapse":
                 if profile.style_class == "E":
-                    style_modifier = 0.5  # speed horses fade badly in collapses
+                    style_modifier = 0.5
                 elif profile.style_class == "EP":
-                    style_modifier = 0.7  # pressers hurt too but less
+                    style_modifier = 0.7
                 elif profile.style_class == "C":
-                    style_modifier = 1.4  # closers thrive
+                    style_modifier = 1.4
             elif scenario.label == "uncontested":
                 if profile.style_class == "E":
-                    style_modifier = 1.3  # lone speed bonus
+                    style_modifier = 1.3
                 elif profile.style_class == "C":
-                    style_modifier = 0.7  # closers suffer without pace
+                    style_modifier = 0.7
 
-            adjusted_rate = base_rate * ability_multiplier * style_modifier
+            # Phase B: Pace dependency adjustment (if horse has 8+ starts)
+            # Uses measured pace_differential to adjust within-scenario performance
+            pace_modifier = 1.0
+            if profile.pace_differential is not None:
+                if scenario.label == "collapse" and profile.pace_differential > 0:
+                    # Horse has proven they perform better in fast-pace races
+                    # Scale: +5 PR pace differential → additional 1.3× boost
+                    pace_modifier = 1.0 + (profile.pace_differential / 15.0)
+                elif scenario.label == "uncontested" and profile.pace_differential < 0:
+                    # Horse performs better in slow-pace races
+                    pace_modifier = 1.0 + (abs(profile.pace_differential) / 15.0)
+                elif scenario.label == "collapse" and profile.pace_differential < 0:
+                    # Horse is hurt by fast pace (speed-dependent)
+                    pace_modifier = 1.0 - (abs(profile.pace_differential) / 20.0)
+                elif scenario.label == "uncontested" and profile.pace_differential > 0:
+                    # Closer who needs pace — hurt by slow pace
+                    pace_modifier = 1.0 - (profile.pace_differential / 20.0)
+                pace_modifier = max(0.4, min(2.0, pace_modifier))  # bound
+
+            adjusted_rate = base_rate * ability_multiplier * style_modifier * pace_modifier
 
             scenario_probs[scenario.label] = adjusted_rate
 

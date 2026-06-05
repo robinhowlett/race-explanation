@@ -15,12 +15,20 @@ def project_pace(profiles: list[RunningStyleProfile], distance_feet: int, surfac
     """
     zone = "sprint" if distance_feet <= 4290 else "route"
 
-    # Identify speed horses
+    # Identify speed horses and potential pace contributors
     speed_horses = [p for p in profiles if p.style_class == "E"]
     pressers = [p for p in profiles if p.style_class == "EP"]
 
-    n_speed = len(speed_horses)
-    n_press = len(pressers)
+    # EP horses with above-field-average early speed can contest — count them as "potential speed"
+    field_avg_2f = _field_avg_pr_2f(profiles)
+    hot_pressers = [p for p in pressers if p.avg_pr_2f > field_avg_2f + 3]
+
+    # Effective speed count: E + hot pressers (they may press for the lead)
+    n_speed = len(speed_horses) + len(hot_pressers)
+    n_press = len(pressers) - len(hot_pressers)  # remaining non-hot pressers
+
+    # Combine for naming purposes
+    speed_horses = sorted(speed_horses + hot_pressers, key=lambda p: p.avg_pr_2f, reverse=True)
 
     # Rank speed horses by early ability
     speed_horses.sort(key=lambda p: p.avg_pr_2f, reverse=True)
