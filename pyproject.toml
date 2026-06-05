@@ -1,0 +1,18 @@
+[project]
+name = "race-explanation"
+version = "0.1.0"
+description = "Race-level analysis: pace projection, scenario-conditional probabilities, and narrative explanation"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "scipy",
+    "psycopg[binary]",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
