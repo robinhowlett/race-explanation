@@ -2,38 +2,48 @@
 
 ## Project
 
-- **Repo:** `performance-rating` (extending the existing project)
-- **Runs on:** robinpc (WSL Ubuntu), via SSH tunnel for local dev
+- **Repo:** `race-explanation` (separate from performance-rating)
+- **Runs on:** local (via SSH tunnel to robinpc postgres) or on robinpc directly
 - **Language:** Python 3.12
 - **Database:** chartbase (PostgreSQL, `handycapper` schema — same as PR system)
-- **Depends on:** `performance_ratings` table (8M rows, already computed)
+- **Depends on:** `performance_ratings` table (8M rows, computed by performance-rating)
 
 ---
 
 ## Phase Overview
 
 ```
-Phase A: MVP (produces useful explanations from existing data)
-  A.1  Build historical lookup tables (win rate by style × pace × distance)
-  A.2  Running style classification (position + slope → E/EP/S/C)
-  A.3  Pace scenario projection (count speed types → 3 scenarios)
-  A.4  Scenario-conditional probabilities (lookup-based)
-  A.5  Template narrative generation
-  A.6  Validation: backtest pace predictions + probability calibration
+Phase A: MVP ✓ COMPLETE
+  A.1  Build historical lookup tables ✓
+  A.2  Running style classification ✓
+  A.3  Pace scenario projection ✓
+  A.4  Scenario-conditional probabilities ✓
+  A.5  Template narrative generation ✓
+  A.6  Validation ✓ (29% top-pick, 2.2× random, Brier +19.7%)
 
-Phase B: Calibrated Model (improves accuracy, adds nuance)
-  B.1  Pace dependency computation (correlation-based, 8+ starts)
-  B.2  Softmax temperature calibration (field-size-dependent)
-  B.3  Post position modifiers
-  B.4  Scenario-adjusted ability (pace_differential × scenario intensity)
-  B.5  Validation: does calibrated model beat MVP lookup?
+Phase B: Calibrated Model ✓ PARTIALLY COMPLETE
+  B.1  Pace dependency computation ✓ (correlation + differential for 8+ start horses)
+  B.2  Style × scenario modifiers ✓ (E penalized in collapse, C boosted)
+  B.3  Hot presser detection ✓ (EP with above-avg speed counted as pace contributor)
+  B.4  In-running probability model ✓ (well-calibrated, validated on 300 races)
+  B.5  Monte Carlo pre-race projection ✓ (simulates positions, averages in-running probs)
+  B.6  Softmax temperature calibration — DEFERRED (lookup + modifiers work adequately)
+  B.7  Post position modifiers — DEFERRED (PP has zero correlation with position on Dirt)
 
-Phase C: Market Integration (connects to wagering)
-  C.1  Odds data pipeline (final odds → implied probabilities)
-  C.2  Odds jitter for backtest simulation (±5-10%)
-  C.3  Market disagreement identification (model vs market)
-  C.4  Edge quantification and confidence
-  C.5  Exotic extension (exacta/trifecta scenario probabilities)
+Phase C: Form + Signals + Market ✓ COMPLETE
+  C.1  Form projection ✓ (recency-weighted, trend-aware, half-life 5, trip discount)
+  C.2  Signal detection ✓ (7 signal types: hidden ability, pace excuse, closing burst, etc.)
+  C.3  Market comparison ✓ (model prob vs odds-implied, edge calculation)
+  C.4  Structured JSON output ✓ (for LLM consumption)
+  C.5  Batch card pipeline ✓ (explain_card.py)
+  C.6  Turf/Synthetic validation ✓ (consistent across surfaces)
+
+Phase D: Future Work (not yet started)
+  D.1  Exotic extension (exacta/trifecta scenario probabilities)
+  D.2  Odds jitter for backtest simulation
+  D.3  Distance/surface preference per horse
+  D.4  Trainer pattern signals (first-off-layoff, equipment changes)
+  D.5  Jockey × style interaction
 ```
 
 ---

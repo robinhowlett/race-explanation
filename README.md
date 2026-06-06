@@ -1,86 +1,103 @@
 # Race Explanation System
 
-Takes an entered field of horses and produces a structured analysis: how the race will likely unfold, what each horse's chances are under different pace scenarios, and why.
+Produces structured race analysis for an LLM to reason over. For each race: pace scenarios with probabilities, per-horse form projections, signal detection (hidden ability, pace excuses, tactical shifts), and market disagreements.
 
 ## What it produces
 
-For any race in the database, the system outputs:
+Structured JSON per race with:
+- **Scenarios** — 3 pace scenarios (uncontested / contested / collapse) with probability weights
+- **Contenders** — each horse with: win probability, scenario sensitivity, form estimate (level + confidence + trend), running style, and detected signals
+- **Market** — model probability vs odds-implied probability, with edge calculation
 
-1. **Pace scenario projection** — will the speed be contested? 3 scenarios with probability weights.
-2. **Scenario-conditional probabilities** — each horse's win chance under each scenario.
-3. **Narrative explanation** — natural language: who benefits from what, what the key contingency is.
-
-Example output (2015 Belmont Stakes):
+Example (2015 Belmont Stakes, abbreviated):
+```json
+{
+  "scenarios": [
+    {"label": "uncontested", "probability": 0.64, "description": "American Pharoah on clear lead"}
+  ],
+  "contenders": [
+    {
+      "horse": "American Pharoah",
+      "probability": 0.46,
+      "scenario_probs": {"uncontested": 0.53, "collapse": 0.18},
+      "form": {"current_level": 126, "trend_direction": "declining", "confidence": 0.12},
+      "signals": [{"type": "hidden_ability", "description": "Showed PR 128 at 2f but only 116 at finish — has speed but distance is the question"}]
+    },
+    {
+      "horse": "Keen Ice",
+      "probability": 0.08,
+      "scenario_probs": {"uncontested": 0.06, "collapse": 0.16},
+      "signals": [
+        {"type": "pace_excuse", "description": "Never got pace help in Derby (LPD -6), ran PR 109 but has shown 128"},
+        {"type": "closing_burst", "description": "Explosive late move last out — PR 86 early to 106 late"}
+      ]
+    }
+  ],
+  "market": [
+    {"horse": "Keen Ice", "model_prob": 0.08, "market_prob": 0.05, "edge": 0.03, "odds": 17.2}
+  ]
+}
 ```
-8-horse field at BEL 1 1/2m Dirt. American Pharoah figures to control on a clear lead.
 
-Most likely scenario (64%): American Pharoah figures to control on a clear lead.
+An LLM consuming this can generate targeted narratives: "tell me about the closers," "who benefits if it rains," "what's the value play."
 
-CONTENDERS:
-1. American Pharoah (46%): Front-runner with even energy distribution.
-   Chances range from 18% (collapse) to 52% (uncontested).
-2. Frosted (14%): Stalker with even energy distribution.
-3. Keen Ice (8%): Closer who finishes strongly.
-   Chances range from 6% (uncontested) to 16% (collapse).
+## Signal Types
 
-Key question: Does American Pharoah get an uncontested lead?
-If yes: American Pharoah is dangerous on an easy lead.
-If challenged by Frosted: pace quickens, opening the door for closers.
+The system detects 7 signal types that surface nuances a career average misses:
 
-ACTUAL RESULT: #1 American Pharoah, #2 Frosted, #3 Keen Ice ✓
-```
-
-## How it works
-
-1. **Running Style Classification** — queries each horse's last 5-10 rated starts, computes position preference (E/EP/S/C), energy distribution (Speed/Even/Stamina), and ability estimate.
-
-2. **Pace Scenario Projection** — counts speed types in the field, determines if pace will be contested, produces 3 scenarios with probabilities.
-
-3. **Conditional Probabilities** — for each horse × scenario, looks up historical win rates by position-quartile × pace-bucket, scaled by relative ability and style×scenario interaction.
-
-4. **Narrative** — fills templates from structured output.
+| Signal | What it means |
+|--------|--------------|
+| `hidden_ability` | High PR at intermediate call, moderate finish — has speed but couldn't sustain |
+| `pace_excuse` | Compromised by impossible pace scenario (front-runner in collapse, closer in held pace) |
+| `closing_burst` | Explosive late move (PR_late >> PR_early) — finishing kick on display |
+| `shape_improving` | Energy distribution getting better — fading less, or building more |
+| `style_change` | Tactical shift from established pattern (moved forward or back) |
+| `improving_trajectory` | Steadily rising PR across recent starts |
+| `trouble_discount` | Trip trouble suppressed PR below clean average |
 
 ## Running
 
 ```bash
-cd race-explanation
-python -m venv .venv && source .venv/bin/activate
+# Setup
 pip install -e ".[dev]"
 
 # Build lookup tables (once)
-RE_DB_HOST=localhost RE_DB_PORT=5433 python scripts/build_race_lookup_tables.py
+python scripts/build_race_lookup_tables.py
 
-# Explain a race
-RE_DB_HOST=localhost RE_DB_PORT=5433 python scripts/explain_race.py --track BEL --date 2015-06-06 --number 11
-RE_DB_HOST=localhost RE_DB_PORT=5433 python scripts/explain_race.py --race-id 298614
+# Single race
+python scripts/explain_race_v2.py --track BEL --date 2015-06-06 --number 11 --json
+
+# Full card
+python scripts/explain_card.py --track BEL --date 2015-06-06
+python scripts/explain_card.py --track BEL --date 2015-06-06 --output-dir output/
 ```
 
-## Database
+Requires `RE_DB_HOST` and `RE_DB_PORT` env vars pointing to the chartbase PostgreSQL database.
 
-Reads from the same `chartbase` PostgreSQL database as the performance-rating system. Requires the `performance_ratings` table to be populated.
+## Validation Results
+
+| Metric | Value |
+|--------|-------|
+| Top-pick win rate | 25.6% (2.2× random) |
+| Rank correlation (form projection) | 0.287 |
+| Rank correlation (market/odds) | 0.470 |
+| In-running calibration | ✓ at all probability levels (300 races) |
+| Brier improvement vs naive | 19.7% |
+| Consistent across Dirt/Turf/Synthetic | ✓ (0.28 correlation on all surfaces) |
+
+## Research Findings
+
+See `docs/findings.md` for detailed empirical results. Key takeaways:
+- Ability (PR history) is the only predictive signal; style/pace adds narrative but not edge
+- The market beats our ability estimate in aggregate — but we're not trying to beat the market flat
+- The value is in articulating specific reasons for disagreement: signals + scenarios + form trajectory
+- Post position has zero correlation with first-call position on Dirt (conventional wisdom is wrong)
+
+## Architecture
+
+Depends on the `performance-rating` system's output (`handycapper.performance_ratings` table with 8M rows).
 
 ```
-RE_DB_HOST=localhost
-RE_DB_PORT=5433  (via SSH tunnel to robinpc)
-RE_DB_NAME=chartbase
-RE_DB_USER=handycapper
-RE_DB_PASSWORD=handycapper
+performance-rating/ → computes PRs (backward-looking, batch)
+race-explanation/   → consumes PRs, produces explanations (forward-looking, per-race)
 ```
-
-## Validation Results (MVP)
-
-| Race | Model Top Pick | Actual Winner | Top 3 Match? |
-|------|---------------|---------------|---|
-| 2015 Belmont Stakes (G1) | American Pharoah (46%) | American Pharoah | Yes — 1,2,3 exact |
-| SA 2014 Frank E. Kilroe Mile (G1) | Winning Prize (21%) | Winning Prize | Winner correct |
-| SAR 2017 Schuylerville (G3, pace collapse) | Mel's Gone Wild (28%) | Dream It Is (#2, 20%) | Actual winner was 2nd choice |
-
-## Docs
-
-- `docs/race-explanation.md` — full spec
-- `docs/implementation-plan.md` — phased plan (MVP → Calibrated → Market)
-
-## What's next
-
-- **Phase B**: Pace dependency (correlation-based), softmax temperature calibration, post position modifiers
-- **Phase C**: Odds integration, market disagreement identification, exotic extension
