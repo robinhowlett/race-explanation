@@ -39,6 +39,25 @@ class PaceScenario:
 
 
 @dataclass
+class Signal:
+    type: str           # category of signal
+    strength: float     # 0-1, how notable
+    description: str    # plain language explanation
+    evidence: str       # the specific numbers backing it up
+
+
+@dataclass
+class FormEstimate:
+    current_level: float
+    confidence: float
+    trend: float
+    trend_direction: str
+    typical_slope: float
+    n_starts: int
+    days_since_last: int
+
+
+@dataclass
 class ContenderAnalysis:
     horse: str
     overall_prob: float
@@ -47,6 +66,8 @@ class ContenderAnalysis:
     sensitivity: float                  # max - min across scenarios
     best_scenario: str
     worst_scenario: str
+    form: FormEstimate | None = None
+    signals: list[Signal] = field(default_factory=list)
     narrative: str = ""
 
 
