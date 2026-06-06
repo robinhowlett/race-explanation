@@ -128,3 +128,17 @@ The race explanation system uses PR history to:
 3. **Detect signals** — shape changes, hidden ability at intermediate calls, pace excuses, closing bursts
 4. **Project pace** — from early speed capability (pr_2f relative to field)
 5. **Compute scenario probabilities** — combining ability, style, and pace context
+6. **Produce structured past performances** — full PP with running lines, PRs, pace context, and trip comments for each prior start
+
+## Past Performance Context
+
+The `past_performances` module produces the full racing history for each horse in a format that mirrors a Brisnet PP but includes our PR data. Each prior start shows:
+
+- **Running line**: position and lengths behind at every call point (Start, 2f, 4f, 6f, stretch, finish)
+- **PR vector**: pr_finish, pr_early, pr_late, pr_slope for that start
+- **Pace context**: the race's LPD and front_group_size (was it a speed-favoring or closer-favoring race?)
+- **Daily variant**: how fast the track played that day (already baked into PR, but shown for context)
+- **Trip comment**: the chart caller's one-line description of what happened ("5wd turns, brushed late")
+- **Odds**: what the market thought of this horse in that race
+
+This gives an LLM the raw evidence to reason from — not just our analytical conclusions, but the underlying data a handicapper would read.

@@ -52,6 +52,7 @@ src/race_explanation/
 ├── conditional_probs.py   # Scenario × horse → win probabilities (lookup + modifiers)
 ├── form_projection.py     # Recency-weighted, trend-aware ability estimation
 ├── signals.py             # Detects 7 signal types in PR history
+├── past_performances.py   # Full structured PPs (running lines, breeding, connections, PRs)
 ├── in_running.py          # In-running probability model (P(win | position, lengths, pace))
 ├── pre_race_projection.py # Monte Carlo pre-race projection using in-running model
 ├── narrative.py           # Template-based narrative (for CLI, not production)
@@ -66,6 +67,7 @@ src/race_explanation/
 - **Signal detection surfaces nuances** the market may miss: shape changes, hidden ability at intermediate calls, pace excuses, closing bursts, style shifts, trajectory changes.
 - **The system explains, it doesn't predict.** The market beats our ability estimate in aggregate (0.47 vs 0.29 rank correlation). The value is in articulating WHY a horse has chances, identifying specific reasons for disagreement, and surfacing signals for a betting thesis.
 - **In-running model is well-calibrated.** Validated across 300 races — when it says 30%, they win ~30%. Provides the building blocks for scenario probabilities.
+- **Full structured PPs for LLM context.** The past_performances module produces the equivalent of a Brisnet PP (running lines, breeding, connections, trip comments) enriched with our PR data, signals, and form projection. Gives the LLM everything a handicapper would see.
 
 ## Specs & Research
 

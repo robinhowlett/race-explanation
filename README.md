@@ -93,6 +93,32 @@ See `docs/findings.md` for detailed empirical results. Key takeaways:
 - The value is in articulating specific reasons for disagreement: signals + scenarios + form trajectory
 - Post position has zero correlation with first-call position on Dirt (conventional wisdom is wrong)
 
+## Past Performances
+
+The system also produces full structured PPs for each horse — the equivalent of what a handicapper sees in a Brisnet PP, enriched with our analytical data:
+
+```json
+{
+  "horse": "American Pharoah",
+  "breeding": {"sire": "Pioneerof the Nile", "dam": "Littleprincessemma"},
+  "connections": {"trainer": "Bob Baffert"},
+  "record": {"starts": 7, "wins": 6, "win_pct": 85.7},
+  "analysis": {"form_level": 126.1, "style": "E", "form_trend": "declining", "signals": [...]},
+  "past_starts": [
+    {
+      "date": "2015-05-02", "track": "CD", "distance": "1 1/4m", "class": "G1",
+      "finish": 1, "odds": 2.9, "jockey": "Victor Espinoza",
+      "running_line": [{"call": "2f", "position": 3, "lengths_behind": 1.0}, ...],
+      "pr": {"finish": 115.9, "early": 121.6, "late": 117.2, "slope": -2.22},
+      "pace": {"lpd": -5.6, "front_group": 14},
+      "context": {"daily_variant": 0.53, "comment": "5wd turns,brushed late"}
+    }
+  ]
+}
+```
+
+An LLM consuming this has everything needed to reason about a horse's history — where they were at every point in every race, how fast they ran, what went right or wrong, and our analytical signals on top.
+
 ## Architecture
 
 Depends on the `performance-rating` system's output (`handycapper.performance_ratings` table with 8M rows).
