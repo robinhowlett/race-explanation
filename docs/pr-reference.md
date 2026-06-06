@@ -130,6 +130,100 @@ The race explanation system uses PR history to:
 5. **Compute scenario probabilities** — combining ability, style, and pace context
 6. **Produce structured past performances** — full PP with running lines, PRs, pace context, and trip comments for each prior start
 
+## How to Communicate These Numbers
+
+The structured data contains precise values. When generating narratives, translate them into racing language that a knowledgeable fan would use — grounded in the numbers but not dominated by them.
+
+### PR Finish (ability level)
+
+| Instead of | Say something like |
+|---|---|
+| "PR 126.1" | "a form figure of 126 — solidly at G1 level, among the best in this field" |
+| "PR 103" | "running at a solid mid-level claiming figure" |
+| "PR 95" | "below average for this class — likely overmatched" |
+
+Context that helps: compare to the field. "His best recent figure of 118 would make him competitive here, where the field averages around 112." Or: "At 126 he's head and shoulders above this lot — the next best is only 114."
+
+When a horse has earned a PR that's above their current class level: "He's been running G3 figures (120+) while entered in allowance company — either he's improving or his trainer is protecting him at a lower level."
+
+### PR Slope (energy distribution)
+
+| Instead of | Say something like |
+|---|---|
+| "slope +5.2" | "a strong finishing type who saves his best for late — his figures get better as the race goes on relative to par" |
+| "slope -4.0" | "a front-end type who uses his speed early but tends to flatten out in the final stages" |
+| "slope +0.5" | "distributes his energy evenly throughout — not obviously one-dimensional" |
+
+The key: slope is RELATIVE TO PAR, not absolute acceleration. A positive slope doesn't mean the horse speeds up — it means they hold their speed better than the expected deceleration curve. The right phrasing:
+
+- Positive slope: "finishes stronger than expected for this distance" or "his advantage over par grows through the race — a stamina signature"
+- Negative slope: "his early superiority tends to evaporate as the race progresses" or "he's at his most dangerous in the first half"
+- Near zero: "runs to a consistent level throughout" or "no obvious bias between early and late"
+
+### LPD (Leaders' Pace Delta)
+
+LPD measures how much the front-runners declined from the first call to the finish. It tells you what HAPPENED to the pace, not what should have happened.
+
+| LPD | What happened | How to describe it |
+|---|---|---|
+| > -15 | Leaders barely faded | "the pace was pedestrian — front-runners had it easy and coasted home" |
+| -15 to -25 | Normal deceleration | "an honest pace that neither helped nor hurt the speed" |
+| -25 to -35 | Notable fade | "the pace took its toll — leaders came back to the field in the stretch" |
+| -35 to -48 | Heavy decline | "a punishing pace that set it up perfectly for closers" |
+| < -48 | Collapse | "the pace utterly collapsed — the speed horses destroyed each other, and anything coming from behind was gifted the race" |
+
+In narrative: "Last time out, the pace collapsed (LPD -52) and he was the main beneficiary, rallying from 8 lengths back to win going away. The question is whether he can reproduce that figure when the pace is more honest — his two runs on a held pace (LPD -12, -18) yielded much lower figures."
+
+### Daily Variant
+
+| Instead of | Say something like |
+|---|---|
+| "daily_variant +0.8" | "the track was playing fast that day — about 0.8 fps faster than normal, which inflated everyone's raw times. His adjusted figure already accounts for this." |
+| "daily_variant -0.5, std 1.2" | "the card was inconsistent — some races ran fast, others slow. His figure from that day carries more uncertainty than usual." |
+| "daily_variant +0.1, std 0.3" | "the track played true to form — normal speed, consistent card. His figure from this day is reliable." |
+
+When the daily variant is large AND the horse ran a big figure: "His 118 came on a day the track was running almost a full point fast — but the system already adjusts for that, so the 118 is genuine. Still, the high daily variant std (1.1) means there's a touch more uncertainty than usual."
+
+### Scenario Probabilities
+
+Don't lead with percentages. Lead with the story, then support with probability.
+
+| Instead of | Say something like |
+|---|---|
+| "P(uncontested)=0.64" | "There's only one confirmed speed type in here, so the most likely scenario is a soft lead — and that's what usually happens with a lone front-runner like this (about two-thirds of the time they get away uncontested)." |
+| "P(collapse)=0.30" | "With three horses who've shown high early speed, there's a real chance — roughly one in three — that they take each other on and collapse the pace for the closers." |
+| "sensitivity=0.35" | "His chances swing dramatically depending on what happens early. In a soft pace he's only about a 20% shot, but if the speed collapses he becomes a serious 35% contender. He's the definition of pace-dependent." |
+
+### Signals
+
+Signals should be presented as observations that tell a story, not as classified data points.
+
+| Signal type | How to present it |
+|---|---|
+| hidden_ability | "He showed a PR of 128 through the first four furlongs before flattening to 116 at the wire. The raw ability is clearly there — the question is whether he can sustain it over today's longer distance. If the pace is slow enough for him to coast early, that 128-level talent might carry further." |
+| pace_excuse | "Last time was a complete throw-out — the pace was nonexistent (LPD just -6) and he was stranded behind a wall of horses with nowhere to go. He ran a 109, but his best figure on a legitimate pace is 128. If the speed shows up today, he's a different horse." |
+| closing_burst | "In his last start he was doing nothing at the 4f mark (PR 104 early) then exploded in the final quarter (PR 127 late), gaining 4 positions in the process. That kind of late acceleration is what you want to see from a horse whose style needs the race to come to them." |
+| shape_improving | "His energy distribution has been trending the right way — in his last three starts his slope has been +1, +3, +4, compared to -2 or worse earlier in his career. He's learning to rate and finish, which suggests he's still developing." |
+| style_change | "After spending his entire career pressing the pace (typically 2nd or 3rd early), his last two starts show him sitting well back (7th and 8th at the first call). The trainer has clearly changed tactics — and it's worked, with his two best late figures coming from these new positions." |
+| improving_trajectory | "He's been on a steady climb — his last six figures read 101, 103, 106, 109, 112, 115. That's a horse who's improving with every start, and there's no reason to think the ceiling has been reached yet. The market may still be pricing his older, weaker form." |
+| trouble_discount | "He was blocked in tight last time and had to steady at the quarter pole (trip note: 'steadied 3/8, no room'). His 104 that day is 8 points below his clean average of 112. If he gets a clean trip today, the bounce-back to his true level would make him very competitive." |
+
+### Comparing Horses
+
+When discussing how horses compare to each other, frame it in terms of the gap and what it means practically:
+
+- "He holds a 10-point figure advantage over the second-best in here — that's roughly equivalent to 2 lengths at the wire if both run their figures. That's a significant edge."
+- "The top four are separated by only 4 points (112, 111, 109, 108) — essentially the same horse on paper. This race will be decided by who gets the trip, not who has the most talent."
+- "She's dropping from G2 company where she earned a 120 into this allowance field where the best figure is 108. On raw ability she could win this by daylight — the only question is whether there's a reason for the drop."
+
+### Odds and Edge
+
+When discussing market disagreements:
+
+- "The market has him at 8/1, implying about a 12% chance. Our figures put him closer to 20% — the gap comes from his pace excuse last out and the improving trajectory the market may not have fully priced in. At 8/1 he represents genuine value."
+- "She's the 2/1 favorite, and honestly the figures support it — she's the fastest horse in here by 8 points and the pace scenario favors her. No value in the win pool, but she's a strong anchor for horizontal exotics."
+- "At 15/1 the market is saying he's a longshot, but our scenario model shows that in the 30% of cases where the pace collapses, he becomes a 25% chance. The question is whether you're willing to bet on that specific scenario unfolding."
+
 ## Past Performance Context
 
 The `past_performances` module produces the full racing history for each horse in a format that mirrors a Brisnet PP but includes our PR data. Each prior start shows:
