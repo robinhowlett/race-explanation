@@ -20,6 +20,9 @@ from src.race_explanation.pace_projection import project_pace
 from src.race_explanation.conditional_probs import compute_probabilities
 from src.race_explanation.form_projection import project_form
 from src.race_explanation.signals import detect_signals
+from src.race_explanation.horse_stats import get_horse_stats
+from src.race_explanation.race_context import get_race_context
+from src.race_explanation.connections_context import get_connections_context
 
 
 def main():
@@ -38,7 +41,9 @@ def main():
             sys.exit(1)
 
         starters = conn.execute("""
-            SELECT s.horse, s.pp, s.odds, s.official_position
+            SELECT s.horse, s.pp, s.odds, s.official_position,
+                   s.trainer_first, s.trainer_last,
+                   s.jockey_first, s.jockey_last
             FROM handycapper.starters s
             WHERE s.race_id = %(id)s
             ORDER BY s.pp NULLS LAST
@@ -111,6 +116,31 @@ def main():
                     "odds": float(starter["odds"]),
                 })
 
+        # Step 8: Race-level context (base rates, track tendencies)
+        race_ctx = get_race_context(conn, race["track_canonical"], race["distance_compact"],
+                                    race["surface"], race["class_level"], len(starters),
+                                    race_date=race["date"])
+
+        # Step 9: Horse stats (lifetime record, at-distance, at-surface, etc.)
+        horse_stats_data = {}
+        for s in starters:
+            stats = get_horse_stats(conn, s["horse"], race["date"], race["surface"],
+                                   race["distance_compact"], race["track_canonical"])
+            horse_stats_data[s["horse"]] = stats
+
+        # Step 10: Connection stats (trainer/jockey — requires rs_* tables)
+        try:
+            starter_connections = [
+                {"horse": s["horse"],
+                 "trainer_last": s.get("trainer_last"), "trainer_first": s.get("trainer_first"),
+                 "jockey_last": s.get("jockey_last"), "jockey_first": s.get("jockey_first")}
+                for s in starters
+            ]
+            connections = get_connections_context(conn, starter_connections, race["date"],
+                                                 race["track_canonical"])
+        except Exception:
+            connections = {}  # rs_* tables may not be populated yet
+
         # Build output
         output = {
             # Chart-parser RaceResult fields
@@ -160,10 +190,13 @@ def main():
                         {"type": s.type, "strength": s.strength, "description": s.description}
                         for s in c.signals
                     ] if c.signals else [],
+                    "stats": horse_stats_data.get(c.horse),
+                    "connections": connections.get(c.horse),
                 }
                 for c in contenders
             ],
             "market": sorted(market, key=lambda m: m["edge"], reverse=True) if market else [],
+            "raceContext": race_ctx,
             },  # end analysis
             "actualResult": [
                 {"officialPosition": s["official_position"], "horse": s["horse"]}
