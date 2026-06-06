@@ -12,30 +12,38 @@ Structured JSON per race with:
 Example (2015 Belmont Stakes, abbreviated):
 ```json
 {
-  "scenarios": [
-    {"label": "uncontested", "probability": 0.64, "description": "American Pharoah on clear lead"}
-  ],
-  "contenders": [
-    {
-      "horse": "American Pharoah",
-      "probability": 0.46,
-      "scenario_probs": {"uncontested": 0.53, "collapse": 0.18},
-      "form": {"current_level": 126, "trend_direction": "declining", "confidence": 0.12},
-      "signals": [{"type": "hidden_ability", "description": "Showed PR 128 at 2f but only 116 at finish — has speed but distance is the question"}]
-    },
-    {
-      "horse": "Keen Ice",
-      "probability": 0.08,
-      "scenario_probs": {"uncontested": 0.06, "collapse": 0.16},
-      "signals": [
-        {"type": "pace_excuse", "description": "Never got pace help in Derby (LPD -6), ran PR 109 but has shown 128"},
-        {"type": "closing_burst", "description": "Explosive late move last out — PR 86 early to 106 late"}
-      ]
-    }
-  ],
-  "market": [
-    {"horse": "Keen Ice", "model_prob": 0.08, "market_prob": 0.05, "edge": 0.03, "odds": 17.2}
-  ]
+  "raceDate": "2015-06-06",
+  "track": {"code": "BEL"},
+  "raceNumber": 11,
+  "distanceSurfaceTrackRecord": {"distance": {"compact": "1 1/2m", "feet": 7920}, "surface": "Dirt"},
+  "conditions": {"classLevel": "G1"},
+  "numberOfRunners": 8,
+  "analysis": {
+    "scenarios": [
+      {"label": "uncontested", "probability": 0.64, "description": "American Pharoah on clear lead"}
+    ],
+    "contenders": [
+      {
+        "horse": "American Pharoah",
+        "probability": 0.46,
+        "scenario_probs": {"uncontested": 0.53, "collapse": 0.18},
+        "form": {"current_level": 126, "trend_direction": "declining", "confidence": 0.12},
+        "signals": [{"type": "hidden_ability", "description": "Showed PR 128 at 2f but only 116 at finish"}]
+      },
+      {
+        "horse": "Keen Ice",
+        "probability": 0.08,
+        "scenario_probs": {"uncontested": 0.06, "collapse": 0.16},
+        "signals": [
+          {"type": "pace_excuse", "description": "Never got pace help in Derby (LPD -6), ran PR 109 but has shown 128"},
+          {"type": "closing_burst", "description": "Explosive late move last out — PR 86 early to 106 late"}
+        ]
+      }
+    ],
+    "market": [
+      {"horse": "Keen Ice", "model_prob": 0.08, "market_prob": 0.05, "edge": 0.03, "odds": 17.2}
+    ]
+  }
 }
 ```
 
@@ -99,19 +107,29 @@ The system also produces full structured PPs for each horse — the equivalent o
 
 ```json
 {
-  "horse": "American Pharoah",
-  "breeding": {"sire": "Pioneerof the Nile", "dam": "Littleprincessemma"},
-  "connections": {"trainer": "Bob Baffert"},
-  "record": {"starts": 7, "wins": 6, "win_pct": 85.7},
-  "analysis": {"form_level": 126.1, "style": "E", "form_trend": "declining", "signals": [...]},
-  "past_starts": [
+  "horse": {"name": "American Pharoah", "sex": "Colt", "color": "Bay",
+            "sire": {"name": "Pioneerof the Nile"}, "dam": {"name": "Littleprincessemma"}},
+  "connections": {"trainer": {"firstName": "Bob", "lastName": "Baffert"},
+                  "jockey": {"firstName": "Victor", "lastName": "Espinoza"}},
+  "record": {"starts": 7, "wins": 6, "winPct": 85.7},
+  "analysis": {
+    "formProjection": {"currentLevel": 126.1, "trendDirection": "declining", "confidence": 0.12},
+    "style": {"class": "E", "slopeType": "Even", "positionScore": 0.167},
+    "signals": [{"type": "hidden_ability", "description": "Showed PR 128 at 2f but only 116 at finish"}]
+  },
+  "pastStarts": [
     {
-      "date": "2015-05-02", "track": "CD", "distance": "1 1/4m", "class": "G1",
-      "finish": 1, "odds": 2.9, "jockey": "Victor Espinoza",
-      "running_line": [{"call": "2f", "position": 3, "lengths_behind": 1.0}, ...],
-      "pr": {"finish": 115.9, "early": 121.6, "late": 117.2, "slope": -2.22},
-      "pace": {"lpd": -5.6, "front_group": 14},
-      "context": {"daily_variant": 0.53, "comment": "5wd turns,brushed late"}
+      "raceDate": "2015-05-02", "track": "CD", "raceNumber": 11,
+      "conditions": {"distanceCompact": "1 1/4m", "surface": "Dirt", "classLevel": "G1"},
+      "officialPosition": 1, "odds": 2.9,
+      "jockey": {"firstName": "Victor", "lastName": "Espinoza"},
+      "pointsOfCall": [{"compact": "2f", "feet": 1320, "relativePosition": {"position": 3, "totalLengthsBehind": 1.0}}],
+      "comments": "5wd turns,brushed late",
+      "analysis": {
+        "performanceRating": {"finish": 115.9, "early": 121.6, "late": 117.2, "slope": -2.22},
+        "pace": {"lpd": -5.6, "frontGroupSize": 14},
+        "context": {"dailyVariant": 0.53}
+      }
     }
   ]
 }

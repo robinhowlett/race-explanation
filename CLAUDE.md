@@ -63,6 +63,7 @@ src/race_explanation/
 ## Key Design Decisions
 
 - **Structured output for LLM consumption.** The system produces JSON with scenarios, probabilities, form, signals, and market data. Narrative generation is the LLM's job, not ours.
+- **Aligned with chart-parser JSON schema.** Race-level fields (`raceDate`, `track`, `raceNumber`, `distanceSurfaceTrackRecord`, `conditions`, `numberOfRunners`) and starter-level fields (`horse`, `jockey`, `trainer`, `officialPosition`, `pointsOfCall`, `fractionals`, `odds`, `comments`) use chart-parser's naming. Our additions live under an `"analysis"` key at each level.
 - **Form projection uses half-life 5 starts** with trip discount. Improves rank correlation by 21% over career average.
 - **Signal detection surfaces nuances** the market may miss: shape changes, hidden ability at intermediate calls, pace excuses, closing bursts, style shifts, trajectory changes.
 - **The system explains, it doesn't predict.** The market beats our ability estimate in aggregate (0.47 vs 0.29 rank correlation). The value is in articulating WHY a horse has chances, identifying specific reasons for disagreement, and surfacing signals for a betting thesis.
