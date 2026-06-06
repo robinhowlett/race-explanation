@@ -121,10 +121,15 @@ def get_race_context(conn, track: str, distance_compact: str, surface: str,
         else:
             context["trackBias"] = "neutral"
 
-    # Average PR for winners at this class/surface/distance
-    avg_winner = conn.execute("""
-        SELECT AVG(pr.pr_finish)::numeric(5,1) as avg_winner_pr,
-               STDDEV(pr.pr_finish)::numeric(5,1) as std_winner_pr
+    # Winner PR distribution at this class/surface/distance
+    winner_dist = conn.execute("""
+        SELECT AVG(pr.pr_finish)::numeric(5,1) as avg_pr,
+               STDDEV(pr.pr_finish)::numeric(5,1) as std_pr,
+               PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY pr.pr_finish)::numeric(5,1) as p25,
+               PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY pr.pr_finish)::numeric(5,1) as median,
+               PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY pr.pr_finish)::numeric(5,1) as p75,
+               PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY pr.pr_finish)::numeric(5,1) as p90,
+               COUNT(*) as n
         FROM handycapper.performance_ratings pr
         JOIN handycapper.starters s ON s.id = pr.starter_id
         JOIN handycapper.races r ON r.id = pr.race_id
@@ -143,9 +148,16 @@ def get_race_context(conn, track: str, distance_compact: str, surface: str,
         "race_date": race_date,
     }).fetchone()
 
-    if avg_winner and avg_winner["avg_winner_pr"]:
-        context["avgWinnerPR"] = float(avg_winner["avg_winner_pr"])
-        context["stdWinnerPR"] = float(avg_winner["std_winner_pr"]) if avg_winner["std_winner_pr"] else None
+    if winner_dist and winner_dist["avg_pr"]:
+        context["avgWinnerPR"] = float(winner_dist["avg_pr"])
+        context["stdWinnerPR"] = float(winner_dist["std_pr"]) if winner_dist["std_pr"] else None
+        context["winnerPRDistribution"] = {
+            "p25": float(winner_dist["p25"]),
+            "median": float(winner_dist["median"]),
+            "p75": float(winner_dist["p75"]),
+            "p90": float(winner_dist["p90"]),
+            "n": winner_dist["n"],
+        }
 
     return context
 

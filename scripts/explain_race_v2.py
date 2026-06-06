@@ -196,7 +196,14 @@ def main():
                 for c in contenders
             ],
             "market": sorted(market, key=lambda m: m["edge"], reverse=True) if market else [],
-            "raceContext": race_ctx,
+            "expectations": {
+                "winnerPR": {
+                    "average": race_ctx.get("avgWinnerPR"),
+                    "std": race_ctx.get("stdWinnerPR"),
+                    "distribution": race_ctx.get("winnerPRDistribution"),
+                },
+                "favoriteWinRate": race_ctx.get("favoriteWinRate"),
+            },
             },  # end analysis
             "actualResult": [
                 {"officialPosition": s["official_position"], "horse": s["horse"]}
