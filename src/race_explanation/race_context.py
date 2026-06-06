@@ -8,7 +8,7 @@ of the time and first-time starters win about 17%."
 
 
 def get_race_context(conn, track: str, distance_compact: str, surface: str,
-                     class_level: str, field_size: int) -> dict:
+                     class_level: str, field_size: int, race_date=None) -> dict:
     """Get contextual base rates for this type of race.
 
     Returns expectations a handicapper would know from experience:
@@ -33,9 +33,11 @@ def get_race_context(conn, track: str, distance_compact: str, surface: str,
           AND cl.class_level = %(class)s
           AND r.number_of_runners BETWEEN %(lo)s AND %(hi)s
           AND r.track_condition IN ('Fast', 'Firm')
+          AND r.date < %(race_date)s
     """, {
         "surface": surface, "class": class_level,
         "lo": max(5, field_size - 2), "hi": field_size + 2,
+        "race_date": race_date,
     }).fetchone()
 
     if fav_stats and fav_stats["races"] >= 20:
@@ -53,6 +55,7 @@ def get_race_context(conn, track: str, distance_compact: str, surface: str,
         JOIN handycapper.points_of_call poc ON poc.starter_id = s.id AND poc.point = 2
         WHERE r.surface = %(surface)s
           AND r.track_condition IN ('Fast', 'Firm')
+          AND r.date < %(race_date)s
           AND r.number_of_runners >= 6
           AND r.feet BETWEEN %(lo_ft)s AND %(hi_ft)s
           AND poc.position IS NOT NULL
@@ -61,6 +64,7 @@ def get_race_context(conn, track: str, distance_compact: str, surface: str,
         "surface": surface,
         "lo_ft": _dist_feet(distance_compact) - 330,
         "hi_ft": _dist_feet(distance_compact) + 330,
+        "race_date": race_date,
     }).fetchone()
 
     if pace_stats and pace_stats["races"] >= 50:
@@ -79,8 +83,9 @@ def get_race_context(conn, track: str, distance_compact: str, surface: str,
             WHERE cl.class_level LIKE 'MSW%%'
               AND r.surface = %(surface)s
               AND r.track_condition IN ('Fast', 'Firm')
+          AND r.date < %(race_date)s
               AND s.last_raced_date IS NULL
-        """, {"surface": surface}).fetchone()
+        """, {"surface": surface, "race_date": race_date}).fetchone()
 
         if fts_stats and fts_stats["starters"] >= 100:
             context["firstTimeStarterWinRate"] = round(fts_stats["wins"] / fts_stats["starters"], 3)
@@ -97,10 +102,11 @@ def get_race_context(conn, track: str, distance_compact: str, surface: str,
         WHERE r.track_canonical = %(track)s
           AND r.surface = %(surface)s
           AND r.track_condition IN ('Fast', 'Firm')
+          AND r.date < %(race_date)s
           AND r.number_of_runners >= 6
           AND poc.position IS NOT NULL
           AND s.official_position IS NOT NULL
-    """, {"track": track, "surface": surface}).fetchone()
+    """, {"track": track, "surface": surface, "race_date": race_date}).fetchone()
 
     if track_bias and track_bias["races"] >= 100:
         track_speed_rate = track_bias["speed_wins"] / track_bias["races"]
@@ -127,12 +133,14 @@ def get_race_context(conn, track: str, distance_compact: str, surface: str,
           AND pr.excluded = false AND pr.pr_finish IS NOT NULL
           AND r.surface = %(surface)s
           AND r.track_condition IN ('Fast', 'Firm')
+          AND r.date < %(race_date)s
           AND cl.class_level = %(class)s
           AND r.feet BETWEEN %(lo_ft)s AND %(hi_ft)s
     """, {
         "surface": surface, "class": class_level,
         "lo_ft": _dist_feet(distance_compact) - 660,
         "hi_ft": _dist_feet(distance_compact) + 660,
+        "race_date": race_date,
     }).fetchone()
 
     if avg_winner and avg_winner["avg_winner_pr"]:
