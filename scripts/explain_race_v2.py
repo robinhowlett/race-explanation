@@ -113,16 +113,20 @@ def main():
 
         # Build output
         output = {
-            "race": {
-                "id": race["id"],
-                "track": race["track_canonical"],
-                "date": str(race["date"]),
-                "number": race["number"],
-                "distance": race["distance_compact"],
+            # Chart-parser RaceResult fields
+            "raceDate": str(race["date"]),
+            "track": {"code": race["track_canonical"]},
+            "raceNumber": race["number"],
+            "distanceSurfaceTrackRecord": {
+                "distance": {"compact": race["distance_compact"], "feet": race["feet"]},
                 "surface": race["surface"],
-                "class": race["class_level"],
-                "field_size": len(starters),
             },
+            "conditions": {
+                "classLevel": race["class_level"],
+            },
+            "numberOfRunners": len(starters),
+            # Our analysis extension
+            "analysis": {
             "scenarios": [
                 {"label": s.label, "probability": s.probability,
                  "expected_lpd": s.expected_lpd, "description": s.description}
@@ -160,8 +164,9 @@ def main():
                 for c in contenders
             ],
             "market": sorted(market, key=lambda m: m["edge"], reverse=True) if market else [],
-            "actual_result": [
-                {"position": s["official_position"], "horse": s["horse"]}
+            },  # end analysis
+            "actualResult": [
+                {"officialPosition": s["official_position"], "horse": s["horse"]}
                 for s in sorted(
                     [s for s in starters if s["official_position"]],
                     key=lambda s: s["official_position"]
@@ -196,17 +201,18 @@ def _find_race(conn, args):
 
 
 def _pretty_print(output):
-    race = output["race"]
-    print(f'\n{race["field_size"]}-horse field at {race["track"]} {race["date"]} R{race["number"]}')
-    print(f'{race["distance"]} {race["surface"]} ({race["class"]})')
+    dist = output["distanceSurfaceTrackRecord"]
+    print(f'\n{output["numberOfRunners"]}-horse field at {output["track"]["code"]} {output["raceDate"]} R{output["raceNumber"]}')
+    print(f'{dist["distance"]["compact"]} {dist["surface"]} ({output["conditions"]["classLevel"]})')
     print("=" * 70)
 
+    analysis = output["analysis"]
     print(f'\nSCENARIOS:')
-    for s in output["scenarios"]:
+    for s in analysis["scenarios"]:
         print(f'  [{s["probability"]*100:.0f}%] {s["description"]}')
 
     print(f'\nCONTENDERS:')
-    for c in output["contenders"][:6]:
+    for c in analysis["contenders"][:6]:
         form_str = ""
         if c["form"]:
             form_str = f' (level={c["form"]["current_level"]:.0f}, {c["form"]["trend_direction"]}, conf={c["form"]["confidence"]:.2f})'
@@ -217,8 +223,8 @@ def _pretty_print(output):
         for sig in c["signals"][:2]:
             print(f'    Signal [{sig["strength"]:.1f}]: {sig["description"]}')
 
-    if output["market"]:
-        overlays = [m for m in output["market"] if m["edge"] > 0.03]
+    if analysis["market"]:
+        overlays = [m for m in analysis["market"] if m["edge"] > 0.03]
         if overlays:
             print(f'\nMARKET DISAGREEMENTS (model > market):')
             for m in overlays[:3]:
@@ -226,8 +232,8 @@ def _pretty_print(output):
                       f'(edge +{m["edge"]*100:.0f}%, odds {m["odds"]:.1f})')
 
     print(f'\nACTUAL RESULT:')
-    for r in output["actual_result"]:
-        print(f'  #{r["position"]}: {r["horse"]}')
+    for r in output["actualResult"]:
+        print(f'  #{r["officialPosition"]}: {r["horse"]}')
 
 
 if __name__ == "__main__":
