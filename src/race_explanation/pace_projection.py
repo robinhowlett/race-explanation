@@ -41,62 +41,64 @@ def project_pace(profiles: list[RunningStyleProfile], distance_feet: int, surfac
     # Load LPD distribution for calibration
     lpd_table = _load_lpd_table()
 
-    # Base scenario probabilities from speed count
+    # Base scenario probabilities from speed count.
+    # Calibrated from TB races 2010-2015 (180K+ races):
+    #   "collapse" = all speed types finish 4th+ (route: 20%, sprint: 11%)
+    #   "contested" = most speed fades, one holds (route: 55%, sprint: 49%)
+    #   "uncontested" = speed types hold positions (remainder)
     if n_speed == 0:
-        # No confirmed speed — slow pace likely, but a presser may take over
         if n_press >= 2:
             scenarios = _make_scenarios(
-                uncontested=(0.50, -18, f"{pressers[0].horse} likely to inherit lead"),
+                uncontested=(0.55, -18, f"{pressers[0].horse} likely to inherit lead"),
                 contested=(0.35, -25, f"Multiple pressers may engage"),
-                collapse=(0.15, -40, "Unlikely without confirmed speed"),
+                collapse=(0.10, -40, "Unlikely without confirmed speed"),
             )
         else:
             scenarios = _make_scenarios(
-                uncontested=(0.70, -15, "Slow pace expected — no confirmed speed"),
+                uncontested=(0.75, -15, "Slow pace expected — no confirmed speed"),
                 contested=(0.20, -22, "Moderate if someone decides to press"),
-                collapse=(0.10, -38, "Very unlikely — no speed in field"),
+                collapse=(0.05, -38, "Very unlikely — no speed in field"),
             )
 
     elif n_speed == 1:
         horse_name = speed_horses[0].horse
         if speed_horses[0].avg_pr_2f > _field_avg_pr_2f(profiles) + 10:
-            # Dominant speed — will likely control
             scenarios = _make_scenarios(
                 uncontested=(0.60, -20, f"{horse_name} figures to control on a clear lead"),
-                contested=(0.25, -30, f"{horse_name} challenged by a presser"),
-                collapse=(0.15, -42, f"{horse_name} presses too hard / gets challenged unexpectedly"),
+                contested=(0.30, -30, f"{horse_name} challenged by a presser"),
+                collapse=(0.10, -42, f"{horse_name} presses too hard"),
             )
         else:
-            # Moderate sole speed
             scenarios = _make_scenarios(
                 uncontested=(0.50, -23, f"{horse_name} on an uncontested lead"),
-                contested=(0.30, -32, f"{horse_name} engaged by presser(s)"),
-                collapse=(0.20, -42, f"Pace gets away from {horse_name}"),
+                contested=(0.37, -32, f"{horse_name} engaged by presser(s)"),
+                collapse=(0.13, -42, f"Pace gets away from {horse_name}"),
             )
 
     elif n_speed == 2:
         h1, h2 = speed_horses[0].horse, speed_horses[1].horse
         if speed_gap > 8:
-            # One dominant — the other likely sits
             scenarios = _make_scenarios(
-                uncontested=(0.40, -22, f"{h1} has clear speed edge, {h2} may defer"),
-                contested=(0.40, -35, f"{h1} and {h2} engage through early stages"),
-                collapse=(0.20, -45, f"Speed duel between {h1} and {h2} melts both"),
+                uncontested=(0.35, -22, f"{h1} has clear speed edge, {h2} may defer"),
+                contested=(0.50, -35, f"{h1} and {h2} engage through early stages"),
+                collapse=(0.15, -45, f"Speed duel between {h1} and {h2} melts both"),
             )
         else:
-            # Matched speed — duel likely
+            # Matched speed — contested most likely, collapse ~20% route / ~11% sprint
             scenarios = _make_scenarios(
                 uncontested=(0.20, -22, f"One backs off — unlikely with matched speed"),
-                contested=(0.50, -38, f"{h1} and {h2} likely to duel for the lead"),
-                collapse=(0.30, -48, f"Sustained duel between {h1} and {h2} collapses the pace"),
+                contested=(0.60, -38, f"{h1} and {h2} likely to duel for the lead"),
+                collapse=(0.20, -48, f"Sustained duel between {h1} and {h2} collapses the pace"),
             )
 
     else:  # 3+ speed horses
         names = ", ".join(p.horse for p in speed_horses[:3])
+        # Data shows 3 speed doesn't collapse MORE (18% route, 7% sprint)
+        # because one usually inherits. But contested is very high (66-88%).
         scenarios = _make_scenarios(
             uncontested=(0.10, -22, "Unlikely with 3+ speed types"),
-            contested=(0.40, -42, f"Multiple speed ({names}) engage"),
-            collapse=(0.50, -52, f"Speed meltdown — {names} all press"),
+            contested=(0.72, -42, f"Multiple speed ({names}) engage"),
+            collapse=(0.18, -52, f"Speed meltdown — {names} all press"),
         )
 
     # Adjust for distance (routes have less extreme collapses)
