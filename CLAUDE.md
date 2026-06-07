@@ -66,7 +66,8 @@ src/race_explanation/
 - **Aligned with chart-parser JSON schema.** Race-level fields (`raceDate`, `track`, `raceNumber`, `distanceSurfaceTrackRecord`, `conditions`, `numberOfRunners`) and starter-level fields (`horse`, `jockey`, `trainer`, `officialPosition`, `pointsOfCall`, `fractionals`, `odds`, `comments`) use chart-parser's naming. Our additions live under an `"analysis"` key at each level.
 - **Form projection uses half-life 5 starts** with trip discount. Improves rank correlation by 21% over career average.
 - **Signal detection surfaces nuances** the market may miss: shape changes, hidden ability at intermediate calls, pace excuses, closing bursts, style shifts, trajectory changes.
-- **The system explains, it doesn't predict.** The market beats our ability estimate in aggregate (0.47 vs 0.29 rank correlation). The value is in articulating WHY a horse has chances, identifying specific reasons for disagreement, and surfacing signals for a betting thesis.
+- **Ability multiplier calibrated from data (2026-06-06).** Win probability doubles every 2.7 PR points of advantage over field average (measured from 1.8M starters). The old uncalibrated value was 10.0 — approximately 4× too flat. At +15 PR advantage, a horse wins 64% of the time.
+- **The system explains AND predicts.** The A/E curve (Finding 5) shows the market systematically underprices +9 to +30 PR advantage horses (A/E 1.7-2.5). The model's value is in identifying ability edges the market underestimates, particularly dominant horses in weak fields.
 - **In-running model is well-calibrated.** Validated across 300 races — when it says 30%, they win ~30%. Provides the building blocks for scenario probabilities.
 - **Full structured PPs for LLM context.** The past_performances module produces the equivalent of a Brisnet PP (running lines, breeding, connections, trip comments) enriched with our PR data, signals, and form projection. Gives the LLM everything a handicapper would see.
 
