@@ -64,3 +64,45 @@ The edge IS potentially in:
 - Market inefficiency in specific conditions (small fields, unusual pace setups, shipper horses)
 
 The form projection system (recency-weighted, trend-aware, phase-adaptive ability estimation) is the gating requirement before the race explanation system can produce market-beating probabilities.
+
+## Finding 5: PR advantage A/E curve — market systematically misprices dominance (2026-06-06)
+
+**Test:** Does the market correctly price horses based on their PR advantage over the field?
+
+**Result:** NO. A/E (actual wins / odds-implied expected wins) varies dramatically by PR advantage:
+
+| PR Advantage | Win Rate | Market Implied | A/E |
+|---|---|---|---|
+| +3 | 6.3% | 16.9% | 0.37 (overbet) |
+| +6 | 23.2% | 20.4% | 1.14 (fair) |
+| +9 | 40.4% | 23.3% | 1.73 (underbet) |
+| +12 | 53.7% | 25.7% | 2.09 (underbet) |
+| +15 | 64.1% | 27.9% | 2.30 (underbet) |
+| +20 | 77.5% | 31.3% | 2.48 (underbet) |
+
+**Implication:** The market CAPS implied probability at ~30% even for massively dominant horses. A horse +15 PR above the field wins 64% but is priced at 28%. The crowd cannot believe one horse is that dominant — they spread money across alternatives.
+
+Conversely, at +3 PR advantage (marginal favorites), the market OVERPRICES them (A/E=0.37). These are the "false favorites" that the model should fade.
+
+**For the model:** The ability-to-edge mapping should use A/E, not raw probability comparison. A +3 horse is a FADE (market overestimates). A +12 horse is a BACK (market underestimates by 2×). This is the empirical basis for when to agree with the market vs when to disagree.
+
+## Finding 6: Ability multiplier calibration (2026-06-06)
+
+**Test:** What's the actual relationship between PR advantage and win rate?
+
+**Result:** Win probability doubles every 2.7 PR points of advantage over the field average (exponential fit, R² > 0.95). The MVP used 10.0 — approximately 4× too flat.
+
+- +5 PR: 17% win rate
+- +10 PR: 46%
+- +15 PR: 64%
+- +20 PR: 76%
+
+**For the model:** conditional_probs.py updated to `2.0 ** (ability_diff / 2.7)`.
+
+## Finding 7: FTS ability default (2026-06-06)
+
+**Test:** What PR do first-time starters achieve in their debut?
+
+**Result:** Average PR 86.2, median 88.0 (n=115,705 TB starters 2010-2016). Overall population average is 95.5.
+
+**For the model:** Unknown horses should default to ability_estimate=86, not 100. Using 100 treated unknowns as equivalent to proven CLM_5K runners.
