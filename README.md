@@ -1,57 +1,16 @@
 # Race Explanation System
 
-Produces structured race analysis for an LLM to reason over. For each race: pace scenarios with probabilities, per-horse form projections, signal detection (hidden ability, pace excuses, tactical shifts), and market disagreements.
+Produces structured race analysis for an LLM to reason over. For each race: pace scenarios with probabilities, per-horse form projections (ability + early/late + trend), running style profiles (with pace dependency), signal detection (7 types), race context base rates, and market comparisons.
 
-## What it produces
+## What It Produces
 
 Structured JSON per race with:
-- **Scenarios** — 3 pace scenarios (uncontested / contested / collapse) with probability weights
-- **Contenders** — each horse with: win probability, scenario sensitivity, form estimate (level + confidence + trend), running style, and detected signals
-- **Market** — model probability vs odds-implied probability, with edge calculation
-
-Example (2015 Belmont Stakes, abbreviated):
-```json
-{
-  "raceDate": "2015-06-06",
-  "track": {"code": "BEL"},
-  "raceNumber": 11,
-  "distanceSurfaceTrackRecord": {"distance": {"compact": "1 1/2m", "feet": 7920}, "surface": "Dirt"},
-  "conditions": {"classLevel": "G1"},
-  "numberOfRunners": 8,
-  "analysis": {
-    "scenarios": [
-      {"label": "uncontested", "probability": 0.64, "description": "American Pharoah on clear lead"}
-    ],
-    "contenders": [
-      {
-        "horse": "American Pharoah",
-        "probability": 0.46,
-        "scenario_probs": {"uncontested": 0.53, "collapse": 0.18},
-        "form": {"current_level": 126, "trend_direction": "declining", "confidence": 0.12},
-        "signals": [{"type": "hidden_ability", "description": "Showed PR 128 at 2f but only 116 at finish"}]
-      },
-      {
-        "horse": "Keen Ice",
-        "probability": 0.08,
-        "scenario_probs": {"uncontested": 0.06, "collapse": 0.16},
-        "signals": [
-          {"type": "pace_excuse", "description": "Never got pace help in Derby (LPD -6), ran PR 109 but has shown 128"},
-          {"type": "closing_burst", "description": "Explosive late move last out — PR 86 early to 106 late"}
-        ]
-      }
-    ],
-    "market": [
-      {"horse": "Keen Ice", "model_prob": 0.08, "market_prob": 0.05, "edge": 0.03, "odds": 17.2}
-    ]
-  }
-}
-```
-
-An LLM consuming this can generate targeted narratives: "tell me about the closers," "who benefits if it rains," "what's the value play."
+- **Scenarios** — 3 pace scenarios (uncontested / contested / collapse) with calibrated probability weights
+- **Contenders** — each horse with: win probability, scenario sensitivity, form estimate (level + early/late + confidence + trend + last PR), running style (class + pace dependency + front-group %), and detected signals
+- **Race Context** — base rates: speed/closer win rates at this distance/surface, track bias, favorite win rate, FTS win rate
+- **Market** — model probability vs odds-implied probability vs Benter-combined, with edge calculation
 
 ## Signal Types
-
-The system detects 7 signal types that surface nuances a career average misses:
 
 | Signal | What it means |
 |--------|--------------|
@@ -66,18 +25,16 @@ The system detects 7 signal types that surface nuances a career average misses:
 ## Running
 
 ```bash
-# Setup
 pip install -e ".[dev]"
 
 # Build lookup tables (once)
-python scripts/build_race_lookup_tables.py
+RE_DB_HOST=localhost RE_DB_PORT=5433 python scripts/build_race_lookup_tables.py
 
-# Single race
-python scripts/explain_race_v2.py --track BEL --date 2015-06-06 --number 11 --json
+# Single race (JSON output for LLM consumption)
+RE_DB_HOST=localhost RE_DB_PORT=5433 python scripts/explain_race_v2.py --track BEL --date 2015-06-06 --number 11 --json
 
 # Full card
-python scripts/explain_card.py --track BEL --date 2015-06-06
-python scripts/explain_card.py --track BEL --date 2015-06-06 --output-dir output/
+RE_DB_HOST=localhost RE_DB_PORT=5433 python scripts/explain_card.py --track BEL --date 2015-06-06
 ```
 
 Requires `RE_DB_HOST` and `RE_DB_PORT` env vars pointing to the chartbase PostgreSQL database.
@@ -93,55 +50,27 @@ Requires `RE_DB_HOST` and `RE_DB_PORT` env vars pointing to the chartbase Postgr
 | Brier improvement vs naive | 19.7% |
 | Consistent across Dirt/Turf/Synthetic | ✓ (0.28 correlation on all surfaces) |
 
-## Research Findings
+## Key Design Decisions
 
-See `docs/findings.md` for detailed empirical results. Key takeaways:
-- Ability (PR history) is the only predictive signal; style/pace adds narrative but not edge
-- The market beats our ability estimate in aggregate — but we're not trying to beat the market flat
-- The value is in articulating specific reasons for disagreement: signals + scenarios + form trajectory
-- Post position has zero correlation with first-call position on Dirt (conventional wisdom is wrong)
-
-## Past Performances
-
-The system also produces full structured PPs for each horse — the equivalent of what a handicapper sees in a Brisnet PP, enriched with our analytical data:
-
-```json
-{
-  "horse": {"name": "American Pharoah", "sex": "Colt", "color": "Bay",
-            "sire": {"name": "Pioneerof the Nile"}, "dam": {"name": "Littleprincessemma"}},
-  "connections": {"trainer": {"firstName": "Bob", "lastName": "Baffert"},
-                  "jockey": {"firstName": "Victor", "lastName": "Espinoza"}},
-  "record": {"starts": 7, "wins": 6, "winPct": 85.7},
-  "analysis": {
-    "formProjection": {"currentLevel": 126.1, "trendDirection": "declining", "confidence": 0.12},
-    "style": {"class": "E", "slopeType": "Even", "positionScore": 0.167},
-    "signals": [{"type": "hidden_ability", "description": "Showed PR 128 at 2f but only 116 at finish"}]
-  },
-  "pastStarts": [
-    {
-      "raceDate": "2015-05-02", "track": "CD", "raceNumber": 11,
-      "conditions": {"distanceCompact": "1 1/4m", "surface": "Dirt", "classLevel": "G1"},
-      "officialPosition": 1, "odds": 2.9,
-      "jockey": {"firstName": "Victor", "lastName": "Espinoza"},
-      "pointsOfCall": [{"compact": "2f", "feet": 1320, "relativePosition": {"position": 3, "totalLengthsBehind": 1.0}}],
-      "comments": "5wd turns,brushed late",
-      "analysis": {
-        "performanceRating": {"finish": 115.9, "early": 121.6, "late": 117.2, "slope": -2.22},
-        "pace": {"lpd": -5.6, "frontGroupSize": 14},
-        "context": {"dailyVariant": 0.53}
-      }
-    }
-  ]
-}
-```
-
-An LLM consuming this has everything needed to reason about a horse's history — where they were at every point in every race, how fast they ran, what went right or wrong, and our analytical signals on top.
+- **Ability multiplier = 2.7 PR points** (calibrated from 1.8M starters). Win probability doubles every 2.7 points of advantage.
+- **Form uses half-life 5 starts** with trip discount. 21% better rank correlation than career average.
+- **Pace dependency quantified per horse.** `pace_correlation` and `pace_differential` tell you exactly how much a horse benefits from contested pace.
+- **Race context provides calibration.** Speed wins X% here, closers win Y% — grounds pace analysis in base rates.
+- **A/E curve shows market inefficiency** at +9 to +30 PR advantage (A/E 1.7-2.5). The system identifies ability edges the market underestimates.
 
 ## Architecture
 
-Depends on the `performance-rating` system's output (`handycapper.performance_ratings` table with 8M rows).
-
 ```
-performance-rating/ → computes PRs (backward-looking, batch)
+performance-rating/ → computes PRs (backward-looking, batch, 8M rows)
 race-explanation/   → consumes PRs, produces explanations (forward-looking, per-race)
+race-day-sim/       → consumes explanations via Python imports (Session class)
+redboarder/         → exposes via web API + LLM conversation
 ```
+
+## Related Projects
+
+- [race-day-sim](https://github.com/robinhowlett/race-day-sim) — orchestration (Session class, opinion classification, market combination)
+- [redboarder](https://github.com/robinhowlett/redboarder) — web app (Next.js + Claude API)
+- [racing-stats](https://github.com/robinhowlett/racing-stats) — trainer/jockey A/E snapshots
+- [wagering-analytics](https://github.com/robinhowlett/wagering-analytics) — EV evaluation, Stern-Harville
+- [bet-calculator](https://github.com/robinhowlett/bet-calculator) — ticket construction
