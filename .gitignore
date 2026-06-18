@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 *.egg-info/
 data/lookup_tables/*.json
+.DS_Store
