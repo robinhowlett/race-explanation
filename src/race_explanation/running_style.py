@@ -31,7 +31,7 @@ def classify_horse(conn, horse: str, race_date, surface: str, max_starts: int = 
         JOIN handycapper.starters s ON s.id = pr.starter_id
         JOIN handycapper.races r ON r.id = pr.race_id
         LEFT JOIN handycapper.points_of_call poc ON poc.starter_id = pr.starter_id AND poc.point = 2
-        WHERE s.horse = %(horse)s
+        WHERE s.horse = %(horse)s AND s.id IN (SELECT handycapper.same_horse_starter_ids(%(horse)s, CAST(%(race_date)s AS date)))
           AND r.date < %(race_date)s
           AND r.surface = %(surface)s
           AND pr.excluded = false
@@ -51,7 +51,7 @@ def classify_horse(conn, horse: str, race_date, surface: str, max_starts: int = 
             JOIN handycapper.starters s ON s.id = pr.starter_id
             JOIN handycapper.races r ON r.id = pr.race_id
             LEFT JOIN handycapper.points_of_call poc ON poc.starter_id = pr.starter_id AND poc.point = 2
-            WHERE s.horse = %(horse)s
+            WHERE s.horse = %(horse)s AND s.id IN (SELECT handycapper.same_horse_starter_ids(%(horse)s, CAST(%(race_date)s AS date)))
               AND r.date < %(race_date)s
               AND pr.excluded = false
               AND pr.pr_finish IS NOT NULL
