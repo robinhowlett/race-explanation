@@ -46,7 +46,7 @@ def build_horse_pp(conn, horse: str, race_date, surface: str,
         FROM handycapper.starters s
         LEFT JOIN handycapper.breeding b ON b.starter_id = s.id
         JOIN handycapper.races r ON r.id = s.race_id
-        WHERE s.horse = %(horse)s AND r.date < %(date)s
+        WHERE s.horse = %(horse)s AND s.id IN (SELECT handycapper.same_horse_starter_ids(%(horse)s, CAST(%(date)s AS date))) AND r.date < %(date)s
         ORDER BY r.date DESC LIMIT 1
     """, {"horse": horse, "date": race_date}).fetchone()
 
@@ -58,7 +58,7 @@ def build_horse_pp(conn, horse: str, race_date, surface: str,
                COUNT(*) FILTER (WHERE s.official_position <= 3) as shows
         FROM handycapper.starters s
         JOIN handycapper.races r ON r.id = s.race_id
-        WHERE s.horse = %(horse)s AND r.date < %(date)s
+        WHERE s.horse = %(horse)s AND s.id IN (SELECT handycapper.same_horse_starter_ids(%(horse)s, CAST(%(date)s AS date))) AND r.date < %(date)s
     """, {"horse": horse, "date": race_date}).fetchone()
 
     # Past starts with full detail (chart-parser aligned)
@@ -103,7 +103,7 @@ def build_horse_pp(conn, horse: str, race_date, surface: str,
         JOIN handycapper.races r ON r.id = s.race_id
         JOIN handycapper.race_class_levels cl ON cl.race_id = r.id
         LEFT JOIN handycapper.performance_ratings pr ON pr.starter_id = s.id
-        WHERE s.horse = %(horse)s AND r.date < %(date)s
+        WHERE s.horse = %(horse)s AND s.id IN (SELECT handycapper.same_horse_starter_ids(%(horse)s, CAST(%(date)s AS date))) AND r.date < %(date)s
         ORDER BY r.date DESC
         LIMIT %(limit)s
     """, {"horse": horse, "date": race_date, "limit": max_starts}).fetchall()

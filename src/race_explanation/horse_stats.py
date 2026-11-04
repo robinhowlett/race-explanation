@@ -35,7 +35,7 @@ def get_horse_stats(conn, horse: str, race_date, surface: str,
         JOIN handycapper.races r ON r.id = s.race_id
         JOIN handycapper.race_class_levels cl ON cl.race_id = r.id
         LEFT JOIN handycapper.performance_ratings pr ON pr.starter_id = s.id
-        WHERE s.horse = %(horse)s AND r.date < %(date)s
+        WHERE s.horse = %(horse)s AND s.id IN (SELECT handycapper.same_horse_starter_ids(%(horse)s, CAST(%(date)s AS date))) AND r.date < %(date)s
         ORDER BY r.date DESC
     """, {"horse": horse, "date": race_date}).fetchall()
 

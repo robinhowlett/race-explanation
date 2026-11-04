@@ -157,7 +157,7 @@ def _get_prior_starts(conn, horse: str, race_date, surface: str | None, limit: i
         FROM handycapper.performance_ratings pr
         JOIN handycapper.starters s ON s.id = pr.starter_id
         JOIN handycapper.races r ON r.id = pr.race_id
-        WHERE s.horse = %(horse)s
+        WHERE s.horse = %(horse)s AND s.id IN (SELECT handycapper.same_horse_starter_ids(%(horse)s, CAST(%(date)s AS date)))
           AND r.date < %(date)s
           AND pr.excluded = false
           AND pr.pr_finish IS NOT NULL
